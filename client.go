@@ -243,7 +243,7 @@ func (mb *client) WriteSingleRegister(address, value uint16) (results []byte, er
 //  Quantity of outputs   : 2 bytes
 func (mb *client) WriteMultipleCoils(address, quantity uint16, value []byte) (results []byte, err error) {
 	if quantity < 1 || quantity > 1968 {
-		err = fmt.Errorf("modbus: quantity '%v' must be between '%v' and '%v',", quantity, 1, 1968)
+		err = fmt.Errorf("modbus: quantity '%v' must be between '%v' and '%v'", quantity, 1, 1968)
 		return
 	}
 	request := ProtocolDataUnit{
@@ -285,7 +285,7 @@ func (mb *client) WriteMultipleCoils(address, quantity uint16, value []byte) (re
 //  Quantity of registers : 2 bytes
 func (mb *client) WriteMultipleRegisters(address, quantity uint16, value []byte) (results []byte, err error) {
 	if quantity < 1 || quantity > 123 {
-		err = fmt.Errorf("modbus: quantity '%v' must be between '%v' and '%v',", quantity, 1, 123)
+		err = fmt.Errorf("modbus: quantity '%v' must be between '%v' and '%v'", quantity, 1, 123)
 		return
 	}
 	request := ProtocolDataUnit{
@@ -310,6 +310,44 @@ func (mb *client) WriteMultipleRegisters(address, quantity uint16, value []byte)
 	respValue = binary.BigEndian.Uint16(results)
 	if quantity != respValue {
 		err = fmt.Errorf("modbus: response quantity '%v' does not match request '%v'", respValue, quantity)
+		return
+	}
+	return
+}
+
+// Request:
+//  Function code         : 1 byte (70d)
+//  operation code        : 2 bytes
+//  Byte count(data field): 1 byte
+//  PicoPet message       : N* bytes
+// Response:
+//  Function code         : 1 byte (70d)
+//  Byte count(data field): 1 byte
+func (mb *client) WritePiPetMessage(optcode uint16, count byte, msg []byte) (err error) {
+	if len(msg)+2+1 > 252 {
+		err = fmt.Errorf("modbus: payload must less than 252, but got %v", len(msg))
+		return
+	}
+	value := make([]byte, 2+1+len(msg))
+	binary.BigEndian.PutUint16(value[0:2], optcode)
+	value[2] = count
+	copy(value[3:], msg)
+	request := ProtocolDataUnit{
+		FunctionCode: FuncCodePiPETWrite,
+		Data:         value,
+	}
+	response, err := mb.send(&request)
+	if err != nil {
+		return
+	}
+	// Fixed response length
+	if len(response.Data) != 1 {
+		err = fmt.Errorf("modbus: response data size '%v' does not match expected '%v'", len(response.Data), 4)
+		return
+	}
+	respValue := response.Data
+	if count != respValue[0] {
+		err = fmt.Errorf("modbus: response address '%v' does not match request '%v'", respValue[0], optcode)
 		return
 	}
 	return
