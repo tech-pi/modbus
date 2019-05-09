@@ -347,7 +347,7 @@ func (mb *client) WritePiPetMessage(optcode uint16, count byte, msg []byte) (err
 	}
 	respValue := response.Data
 	if count != respValue[0] {
-		err = fmt.Errorf("modbus: response address '%v' does not match request '%v'", respValue[0], optcode)
+		err = fmt.Errorf("modbus: response count '%v' does not match request '%v'", respValue[0], count)
 		return
 	}
 	return
