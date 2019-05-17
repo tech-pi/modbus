@@ -47,5 +47,5 @@ type Client interface {
 	// of register in a remote device and returns FIFO value register.
 	ReadFIFOQueue(address uint16) (results []byte, err error)
 	// PiPET custom operation
-	WritePiPetMessage(optcode uint16, count byte, msg []byte) (err error)
+	WritePiPetMessage(optcode uint16, count byte, msg []byte) (result []byte, err error)
 }

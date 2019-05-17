@@ -323,7 +323,7 @@ func (mb *client) WriteMultipleRegisters(address, quantity uint16, value []byte)
 // Response:
 //  Function code         : 1 byte (70d)
 //  Byte count(data field): 1 byte
-func (mb *client) WritePiPetMessage(optcode uint16, count byte, msg []byte) (err error) {
+func (mb *client) WritePiPetMessage(optcode uint16, count byte, msg []byte) (result []byte, err error) {
 	if len(msg)+2+1 > 252 {
 		err = fmt.Errorf("modbus: payload must less than 252, but got %v", len(msg))
 		return
@@ -341,13 +341,13 @@ func (mb *client) WritePiPetMessage(optcode uint16, count byte, msg []byte) (err
 		return
 	}
 	// Fixed response length
-	if len(response.Data) != 1 {
-		err = fmt.Errorf("modbus: response data size '%v' does not match expected '%v'", len(response.Data), 4)
+	if len(response.Data) != 13 {
+		err = fmt.Errorf("modbus: response data size '%v' does not match expected '%v'", len(response.Data), 13)
 		return
 	}
-	respValue := response.Data
-	if count != respValue[0] {
-		err = fmt.Errorf("modbus: response count '%v' does not match request '%v'", respValue[0], count)
+	result = response.Data
+	if count != result[2] {
+		err = fmt.Errorf("modbus: response count '%v' does not match request '%v'", result[2], count)
 		return
 	}
 	return
