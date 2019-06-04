@@ -68,6 +68,11 @@ func (mb *rtuPackager) Encode(pdu *ProtocolDataUnit) (adu []byte, err error) {
 
 	adu[length-1] = byte(checksum >> 8)
 	adu[length-2] = byte(checksum)
+	fmt.Printf("total encode modbus msg:")
+	for _, v := range adu {
+		fmt.Printf("% x", v)
+	}
+	fmt.Println()
 	return
 }
 
@@ -76,12 +81,12 @@ func (mb *rtuPackager) Verify(aduRequest []byte, aduResponse []byte) (err error)
 	length := len(aduResponse)
 	// Minimum size (including address, function and CRC)
 	if length < rtuMinSize {
-		err = fmt.Errorf("modbus: response length '%v' does not meet minimum '%v'", length, rtuMinSize)
+		err = fmt.Errorf("modbus: response length '%x' does not meet minimum '%x'", length, rtuMinSize)
 		return
 	}
 	// Slave address must match
 	if aduResponse[0] != aduRequest[0] {
-		err = fmt.Errorf("modbus: response slave id '%v' does not match request '%v'", aduResponse[0], aduRequest[0])
+		err = fmt.Errorf("modbus: response slave id '%x' does not match request '%x'", aduResponse[0], aduRequest[0])
 		return
 	}
 	return
@@ -90,12 +95,17 @@ func (mb *rtuPackager) Verify(aduRequest []byte, aduResponse []byte) (err error)
 // Decode extracts PDU from RTU frame and verify CRC.
 func (mb *rtuPackager) Decode(adu []byte) (pdu *ProtocolDataUnit, err error) {
 	length := len(adu)
+	fmt.Printf("total decode modbus msg:")
+	for _, v := range adu {
+		fmt.Printf("% x", v)
+	}
+	fmt.Println()
 	// Calculate checksum
 	var crc crc
 	crc.reset().pushBytes(adu[0 : length-2])
 	checksum := uint16(adu[length-1])<<8 | uint16(adu[length-2])
 	if checksum != crc.value() {
-		err = fmt.Errorf("modbus: response crc '%v' does not match expected '%v'", checksum, crc.value())
+		err = fmt.Errorf("modbus: response crc '%x' does not match expected '%x'", checksum, crc.value())
 		return
 	}
 	// Function code & data
@@ -204,6 +214,9 @@ func calculateResponseLength(adu []byte) int {
 		length += 6
 	case FuncCodeReadFIFOQueue:
 		// undetermined
+
+	case FuncCodePiPETWrite:
+		length += 13
 	default:
 	}
 	return length
