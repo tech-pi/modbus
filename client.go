@@ -336,21 +336,33 @@ func (mb *client) WritePiPetMessage(optcode uint16, count byte, msg []byte) (res
 		FunctionCode: FuncCodePiPETWrite,
 		Data:         value,
 	}
+	fmt.Print("request:")
+	for _, v := range request.Data {
+		fmt.Printf("% x", v)
+	}
+	fmt.Println()
 	response, err := mb.send(&request)
 	if err != nil {
 		return
 	}
-	// Fixed response length
-	if len(response.Data) != 13 {
-		err = fmt.Errorf("modbus: response data size '%v' does not match expected '%v'", len(response.Data), 13)
+	if response.FunctionCode == 0xc6 {
+		err = fmt.Errorf("modbus error, function code is %x", response.FunctionCode)
 		return
 	}
+
 	result = response.Data
-	if count != result[2] {
-		err = fmt.Errorf("modbus: response count '%v' does not match request '%v'", result[2], count)
+	fmt.Print("result:")
+	for _, v := range result {
+		fmt.Printf("% x", v)
+	}
+	fmt.Println()
+	// check second part
+	if len(result) != 13 {
+		err = fmt.Errorf("modbus: pico response data size '%v' does not match expected '%v'", len(result), 13)
 		return
 	}
-	return
+
+	return result, nil
 }
 
 // Request:
